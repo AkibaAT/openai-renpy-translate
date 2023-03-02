@@ -10,9 +10,10 @@ _VERBOSITY = 1
 # Calculate token https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
 
 # Link https://beta.openai.com/docs/models/gpt-3
-_DEFAULT_ENGINE = 'text-curie-001'
+_DEFAULT_ENGINE = 'gpt-3.5-turbo'
 _AVAILABLE_ENGINES = ['text-ada-001', 'text-babbage-001',
-                      'text-curie-001', 'text-davinci-003']
+                      'text-curie-001', 'text-davinci-003',
+                      'gpt-3.5-turbo']
 
 # Link https://openai.com/api/pricing
 # 750 words = 1000 tokens
@@ -22,7 +23,8 @@ _PRICING_PER_1K_TOKENS = {
     'text-ada-001': 0.0004,
     'text-babbage-001': 0.0005,
     'text-curie-001': 0.0020,
-    'text-davinci-003': 0.0200
+    'text-davinci-003': 0.0200,
+    'gpt-3.5-turbo': 0.0020
 }
 
 # Link https://beta.openai.com/docs/models/gpt-3
@@ -30,7 +32,8 @@ _TOKEN_LIMITS_PER_REQUEST = {
     'text-ada-001': 2048,
     'text-babbage-001': 2048,
     'text-curie-001': 2048,
-    'text-davinci-003': 4000
+    'text-davinci-003': 4000,
+    'gpt-3.5-turbo': 4000
 }
 
 
@@ -116,26 +119,37 @@ def main(translate, text, filepath, engine, max_token, temperature, verbose):
             raise Exception(
                 f'The required tokens {request_token} are greater than the limit of {_TOKEN_LIMITS_PER_REQUEST[engine]}')
 
-        response = openai.Completion.create(
-            model=engine,
-            prompt=text,
-            temperature=temperature,
-            max_tokens=max_token,
-            frequency_penalty=0,
-            presence_penalty=0
-        )
+        translated_text = ''
+        if engine == 'gpt-3.5-turbo':
+            response = openai.ChatCompletion.create(
+                model=engine,
+                messages=[{"role": "user", "content": text}],
+                temperature=temperature,
+                max_tokens=max_token,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            if choices := response.get('choices', []):
+                if len(choices) > 0:
+                    translated_text = choices[0]['message']['content']
+        else:
+            response = openai.Completion.create(
+                model=engine,
+                prompt=text,
+                temperature=temperature,
+                max_tokens=max_token,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            if choices := response.get('choices', []):
+                if len(choices) > 0:
+                    translated_text = choices[0]['text']
         response_token = response.get('usage', {}).get('completion_tokens', 0)
         response_pricing = calculate_pricing(engine, response_token)
         debug(f'# Response cost: ${response_pricing}')
         debug(f'# Response tokens: {response_token}')
         debug(f'# Total tokens: {request_token + response_token}')
         debug(f'# Total cost: ${request_pricing + response_pricing}')
-
-        translated_text = ''
-
-        if choices := response.get('choices', []):
-            if len(choices) > 0:
-                translated_text = choices[0]['text']
     except Exception as e:
         echo(f'[ERR] {str(e)}')
         sys.exit(1)
