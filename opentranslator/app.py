@@ -321,37 +321,35 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                     translation_file.add_translation_block(translation_block)
                 file_map[file] = translation_file
 
-        print('Starting translation')
-        for file, translation_file in tqdm(file_map.items(), total=len(file_map.keys()), unit="files"):
-            tqdm.write("Translating '{}' {}\u2713 OK{}".format(translation_file, Fore.GREEN, Style.RESET_ALL))
-            translation_file.translate(engine, translate)
+                print('Starting translation')
+                tqdm.write("Translating '{}' {}\u2713 OK{}".format(translation_file, Fore.GREEN, Style.RESET_ALL))
+                translation_file.translate(engine, translate)
 
-        # Write back to disk
-        print("Saving translations")
-        for file, translation_file in tqdm(file_map.items(), total=len(file_map.keys()), unit="files"):
-            with open(file, "r") as f:
-                text_lines = f.readlines()
-                for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks"):
-                    for item in block:
-                        m = re.match(r"(\s*)(\w+)?\s*("")", text_lines[item.target_line])
-                        if m.group(2):
-                            text_lines[item.target_line] = '{}{} "{}"{}\n'.format(m.group(1), m.group(2),
-                                                                                  item.get_translated_content(),
-                                                                                  item.suffix)
-                        else:
-                            text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
-                                                                               item.get_translated_content(),
-                                                                               item.suffix)
-            common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
-            out_path = os.path.join(out_path, os.path.relpath(file, common_path))
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
-            with open(out_path, "w") as f:
-                f.writelines(text_lines)
-        print("")
+                # Write back to disk
+                print("Saving translations")
+                with open(file, "r") as f:
+                    text_lines = f.readlines()
+                    for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks"):
+                        for item in block:
+                            m = re.match(r"(\s*)(\w+)?\s*("")", text_lines[item.target_line])
+                            if m.group(2):
+                                text_lines[item.target_line] = '{}{} "{}"{}\n'.format(m.group(1), m.group(2),
+                                                                                      item.get_translated_content(),
+                                                                                      item.suffix)
+                            else:
+                                text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
+                                                                                   item.get_translated_content(),
+                                                                                   item.suffix)
+                common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
+                out_path = os.path.join(out_path, os.path.relpath(file, common_path))
+                os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                with open(out_path, "w") as f:
+                    f.writelines(text_lines)
+                print("")
 
-        print("Persisting Cache")
-        with open(_TRANSLATION_CACHE_FILE, "w") as f:
-            json.dump(_TRANSLATION_CACHE, f, indent=4)
+                print("Persisting Cache")
+                with open(_TRANSLATION_CACHE_FILE, "w") as f:
+                    json.dump(_TRANSLATION_CACHE, f, indent=4)
     except Exception as e:
         echo(f'[ERR] {str(e)}')
         sys.exit(1)
