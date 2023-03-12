@@ -10,6 +10,7 @@ from colorama import Fore, Style
 import json
 import click
 import openai
+openai.api_key = os.environ['OPENAI_API_KEY']
 
 _VERBOSITY = 1
 
@@ -100,11 +101,12 @@ def echo(text, *args, **kwargs):
 
 class TranslationItem:
 
-    def __init__(self, source_line=0, target_line=0, original_content=""):
+    def __init__(self, source_line=0, target_line=0, original_content="", suffix=""):
         self.source_line = source_line
         self.target_line = target_line
         self.translation_string = None
         self.original_content = original_content
+        self.suffix = suffix
 
     def translate(self, engine, to_language):
         self.translation_string.translate(engine, to_language)
@@ -187,7 +189,7 @@ class TranslationString:
             self.translation = cached_translation
             return
 
-        prefix = f'Translate the following text into {self.to_language}'
+        prefix = f'Translate to {self.to_language}, keep all markers, don\'t add new comments:'
         text = f'{prefix}:\n{self.content}'
 
         request_token = round(_WORDS / len(text))
@@ -258,6 +260,14 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
         globals()['_MAX_TOKEN'] = max_token
         globals()['_TEMPERATURE'] = temperature
 
+        # Caching setup
+        if not os.path.isfile(_TRANSLATION_CACHE_FILE):
+            with open(_TRANSLATION_CACHE_FILE, "w") as f:
+                json.dump({}, f)
+
+        with open(_TRANSLATION_CACHE_FILE, "r") as f:
+            globals()['_TRANSLATION_CACHE'] = json.load(f)
+
         # File Parsing
         files = glob(os.path.join(in_path, "**", "*.rpy"), recursive=True)
         file_map = {}
@@ -292,13 +302,17 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                             and not text_lines[i - 1].strip().startswith("# nvl clear") \
                             and line.strip():
                         m = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i - 1].strip()[2:])
+                        position = text_lines[i - 1].find(m.group(3))
+                        suffix = text_lines[i - 1][position + len(m.group(3)) + 1:]
                         if line.strip().startswith("nvl clear"):
                             translation_item = TranslationItem(source_line=i,
                                                                original_content=m.group(3),
+                                                               suffix=suffix,
                                                                target_line=i + 1)
                         else:
                             translation_item = TranslationItem(source_line=i,
                                                                original_content=m.group(3),
+                                                               suffix=suffix,
                                                                target_line=i)
                         translation_block.add_translation_item(translation_item)
                         continue
@@ -321,10 +335,13 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                     for item in block:
                         m = re.match(r"(\s*)(\w+)?\s*("")", text_lines[item.target_line])
                         if m.group(2):
-                            text_lines[item.target_line] = '{}{} "{}"\n'.format(m.group(1), m.group(2),
-                                                                                item.get_translated_content())
+                            text_lines[item.target_line] = '{}{} "{}"{}\n'.format(m.group(1), m.group(2),
+                                                                                  item.get_translated_content(),
+                                                                                  item.suffix)
                         else:
-                            text_lines[item.target_line] = '{}"{}"\n'.format(m.group(1), item.get_translated_content())
+                            text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
+                                                                               item.get_translated_content(),
+                                                                               item.suffix)
             common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
             out_path = os.path.join(out_path, os.path.relpath(file, common_path))
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
