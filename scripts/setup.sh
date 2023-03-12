@@ -23,8 +23,6 @@ main(){
   source .venv/bin/activate
 
   pip3 install -r requirements.txt
-  pre-commit install
-  pre-commit run --all-files
 }
 
 main "$@"

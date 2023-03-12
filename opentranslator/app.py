@@ -13,7 +13,10 @@ import openai
 
 _VERBOSITY = 1
 
+_TRANSLATION_CACHE = {}
 _TRANSLATION_CACHE_FILE = 'translation_cache.json'
+_TEMPERATURE = 0.7
+_MAX_TOKEN = 256
 
 # Calculate token https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
 
@@ -45,9 +48,9 @@ _TOKEN_LIMITS_PER_REQUEST = {
 }
 
 
-def set_verbosity(verbose: int):
-    if verbose > 0 and verbose <= 3:
-        globals()['_VERBOSITY'] = verbose
+def set_verbosity(verbosity: int):
+    if 0 < verbosity <= 3:
+        globals()['_VERBOSITY'] = verbosity
 
 
 def render_file(filepath: str) -> str:
@@ -55,12 +58,12 @@ def render_file(filepath: str) -> str:
         return f.read()
 
 
-def calculate_pricing(engine: str, tokens: int) -> Decimal:
+def calculate_pricing(engine: str, tokens: int) -> int:
     pricing = Decimal((tokens / _TOKEN) * _PRICING_PER_1K_TOKENS[engine])
     return round(pricing, 4)
 
 
-def verbose(level: str):
+def verbose(level: int):
     import functools
 
     def actual_decorator(func):
@@ -95,9 +98,9 @@ def echo(text, *args, **kwargs):
     click.echo(text, *args, **kwargs)
 
 
-class TranslationItem():
+class TranslationItem:
 
-    def __init__(self, source_line=0, target_line=0, original_content="", translated_content=""):
+    def __init__(self, source_line=0, target_line=0, original_content=""):
         self.source_line = source_line
         self.target_line = target_line
         self.translation_string = None
@@ -122,7 +125,7 @@ class TranslationItem():
         return "TranslationItem({}, {})".format(self.source_line + 1, self.target_line + 1)
 
 
-class TranslationBlock():
+class TranslationBlock:
 
     def __init__(self, source_file=None, block_line=0):
         self.source_file = source_file
@@ -162,7 +165,8 @@ class TranslationFile():
     def __repr__(self):
         return "TranslationFile({}, {} blocks)".format(self.filename, len(self.translation_blocks))
 
-class TranslationString():
+
+class TranslationString:
 
     def __init__(self, content):
         self.content = content
@@ -200,8 +204,8 @@ class TranslationString():
             response = openai.ChatCompletion.create(
                 model=engine,
                 messages=[{"role": "user", "content": text}],
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKEN,
+                temperature=_TEMPERATURE,
+                max_tokens=_MAX_TOKEN,
                 frequency_penalty=0,
                 presence_penalty=0
             )
@@ -212,8 +216,8 @@ class TranslationString():
             response = openai.Completion.create(
                 model=engine,
                 prompt=text,
-                temperature=TEMPERATURE,
-                max_tokens=MAX_TOKEN,
+                temperature=_TEMPERATURE,
+                max_tokens=_MAX_TOKEN,
                 frequency_penalty=0,
                 presence_penalty=0
             )
@@ -226,10 +230,10 @@ class TranslationString():
         debug(f'# Response tokens: {response_token}')
         debug(f'# Total tokens: {request_token + response_token}')
         debug(f'# Total cost: ${request_pricing + response_pricing}')
-        TRANSLATION_CACHE[self.content] = {to_language: self.translation}
+        _TRANSLATION_CACHE[self.content] = {to_language: self.translation}
 
     def pull_from_cache(self, to_language):
-        available_translations = TRANSLATION_CACHE.get(self.content, None)
+        available_translations = _TRANSLATION_CACHE.get(self.content, None)
         if available_translations:
             cached_translation = available_translations.get(to_language, None)
             if cached_translation:
@@ -238,35 +242,24 @@ class TranslationString():
     def __repr__(self):
         return 'TranslationString(content="{}", translation="{}")'.format(self.content, self.translation)
 
+
 @click.command()
 @click.option('--translate', type=str, required=True)
-@click.option('--text', default=None, help='Raw text')
-@click.option('--filepath', type=str, required=True, help='File path containing the text')
-@click.option('--output', type=str, required=True, help="(required) The directory to output data to")
+@click.option('--in-path', type=str, required=True, help='(required) File path containing the text')
+@click.option('--out-path', type=str, required=True, help='(required) The directory to output data to')
 @click.option('--engine', default=_DEFAULT_ENGINE, type=click.Choice(_AVAILABLE_ENGINES), help='GPT-3 engine')
-@click.option('--temperature', default=0.7, help='Higher values means the model will take more risks. Values 0 to 1')
-@click.option('--max-token', default=256, help='The maximum number of tokens to generate in the completion.')
-@click.option('-v', '--verbose', default=3, count=True)
-def main(translate, text, filepath, output, engine, max_token, temperature, verbose):
+@click.option('--temperature', default=_TEMPERATURE, help='Higher values means the model will take more risks. Values 0 to 1')
+@click.option('--max-token', default=_MAX_TOKEN, help='The maximum number of tokens to generate in the completion.')
+@click.option('-v', '--verbosity', default=3, count=True)
+def main(translate, in_path, out_path, engine, max_token, temperature, verbosity):
     try:
-        set_verbosity(verbose)
+        set_verbosity(verbosity)
 
-        global TRANSLATION_CACHE
-        global MAX_TOKEN
-        global TEMPERATURE
-        MAX_TOKEN = max_token
-        TEMPERATURE = temperature
-
-        # Caching setup
-        if not os.path.isfile(_TRANSLATION_CACHE_FILE):
-            with open(_TRANSLATION_CACHE_FILE, "w") as f:
-                json.dump({}, f)
-
-        with open(_TRANSLATION_CACHE_FILE, "r") as f:
-            TRANSLATION_CACHE = json.load(f)
+        globals()['_MAX_TOKEN'] = max_token
+        globals()['_TEMPERATURE'] = temperature
 
         # File Parsing
-        files = glob(os.path.join(filepath, "**", "*.rpy"), recursive=True)
+        files = glob(os.path.join(in_path, "**", "*.rpy"), recursive=True)
         file_map = {}
 
         # Find all translation blocks in all files
@@ -332,8 +325,8 @@ def main(translate, text, filepath, output, engine, max_token, temperature, verb
                                                                                 item.get_translated_content())
                         else:
                             text_lines[item.target_line] = '{}"{}"\n'.format(m.group(1), item.get_translated_content())
-            common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(filepath)])
-            out_path = os.path.join(output, os.path.relpath(file, common_path))
+            common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
+            out_path = os.path.join(out_path, os.path.relpath(file, common_path))
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
             with open(out_path, "w") as f:
                 f.writelines(text_lines)
@@ -341,7 +334,7 @@ def main(translate, text, filepath, output, engine, max_token, temperature, verb
 
         print("Persisting Cache")
         with open(_TRANSLATION_CACHE_FILE, "w") as f:
-            json.dump(TRANSLATION_CACHE, f, indent=4)
+            json.dump(_TRANSLATION_CACHE, f, indent=4)
     except Exception as e:
         echo(f'[ERR] {str(e)}')
         sys.exit(1)

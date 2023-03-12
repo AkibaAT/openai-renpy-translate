@@ -1,13 +1,14 @@
-# Opentranslator - OpenAI | ChatGPT | Translate with python
+# Opentranslator - OpenAI | ChatGPT | Translate ren'py with python
 
-Opentranslator is a simple command that can be used from the terminal to translate text (text plain or from a file). It uses OpenAI API to perform all operations, you can choose which ai engine to use by passing it as a parameter.
+Opentranslator is a simple command that can be used from the terminal to translate ren'py localization files.  
+It uses OpenAI API to perform all operations, you can choose which model to use by passing it as a parameter.
 
 The following project was born to study OpenAI and how it works.
 If you would contribute open a pull request or issue on GitHub.
 
-### Mantained by
+### ren'py Fork Maintained By
 
-- **[Fabrizio Cafolla](https://github.com/FabrizioCafolla)** <a href="https://www.buymeacoffee.com/fabriziocafolla" target="_blank"><img align="right" src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 30px !important; width: 150px !important" ></a>
+- **[Rejaku](https://github.com/Rejaku)**
 
 ### Usage
 
@@ -17,59 +18,28 @@ If you would contribute open a pull request or issue on GitHub.
 - OpenAI Account
 
 
-#### Input text
-```
-# You can save your OPENAI_API_KEY permanently in the user's environment
-export OPENAI_API_KEY="${YOUR_OPENAI_API_KEY}"
-
-pip install opentranslator
-
-opentranslator --translate english --text "Ciao Mondo!"
-```
-
-#### Text from file
-
-```
-opentranslator --translate english --filepath examples/it.txt
-```
-
-#### Other
-
-```
-Arg -vvv: output all info with cost of request (in progress)
-```
-
-### Dev mode
+### Dev Mode
 
 1. Setup env
 
 ```
-git clone https://github.com/FabrizioCafolla/chatgpt-translate-app.git
-
+git clone -b chatgpt git@github.com:Rejaku/openai-chatgpt-opentranslator.git
 cd chatgpt-translate-app
-
 echo 'export OPENAI_API_KEY="${YOUR_OPENAI_API_KEY}"' > .env
-
 chmod +x scritps/*.sh
-
 ./scripts/setup.sh
-
 source .activate
 ```
 
 2. Usage
 
 ```
-python opentranslator/app.py --filepath examples/it.txt --translate english
-
-python opentranslator/app.py --filepath examples/en.txt --translate italian
-
-python opentranslator/app.py --text "Ciao Mondo!" --translate english
+python opentranslator/app.py --translate German --in-path renpyProject/game/tl/German --out-path renpyProject/game/tl/German-AI
 ```
 
 ### Contributors
 
-<a href="https://github.com/fabriziocafolla/opentranslator/graphs/contributors"> <img src="https://contrib.rocks/image?repo=fabriziocafolla/opentranslator" /> </a>
+<a href="https://github.com/Rejaku/openai-renpy-translate/graphs/contributors"> <img src="https://contrib.rocks/image?repo=Rejaku/openai-renpy-translate" /> </a>
 
 ### License
 

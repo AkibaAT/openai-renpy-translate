@@ -5,6 +5,7 @@ __pycache__
 .pytest_cache
 .venv
 *.egg-info
+translation_cache.json
 
 .idea/
 dist/
