@@ -340,16 +340,15 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                                 text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
                                                                                    item.get_translated_content(),
                                                                                    item.suffix)
-                common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
-                out_path = os.path.join(out_path, os.path.relpath(file, common_path))
-                os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                with open(out_path, "w") as f:
-                    f.writelines(text_lines)
-                print("")
-
                 print("Persisting Cache")
                 with open(_TRANSLATION_CACHE_FILE, "w") as f:
                     json.dump(_TRANSLATION_CACHE, f, indent=4)
+                common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
+                out_path_file = os.path.join(out_path, os.path.relpath(file, common_path))
+                os.makedirs(os.path.dirname(out_path_file), exist_ok=True)
+                with open(out_path_file, "w") as f:
+                    f.writelines(text_lines)
+                print("")
     except Exception as e:
         echo(f'[ERR] {str(e)}')
         sys.exit(1)
