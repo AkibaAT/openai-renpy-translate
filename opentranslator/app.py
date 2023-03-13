@@ -302,6 +302,8 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                             and not text_lines[i - 1].strip().startswith("# nvl clear") \
                             and line.strip():
                         m = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i - 1].strip()[2:])
+                        if m is None:
+                            continue
                         position = text_lines[i - 1].find(m.group(3))
                         suffix = text_lines[i - 1][position + len(m.group(3)) + 1:]
                         if line.strip().startswith("nvl clear"):
@@ -332,6 +334,8 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                     for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks"):
                         for item in block:
                             m = re.match(r"(\s*)(\w+)?\s*("")", text_lines[item.target_line])
+                            if m is None:
+                                continue
                             if m.group(2):
                                 text_lines[item.target_line] = '{}{} "{}"{}\n'.format(m.group(1), m.group(2),
                                                                                       item.get_translated_content(),
