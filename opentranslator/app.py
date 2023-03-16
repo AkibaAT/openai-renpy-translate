@@ -55,7 +55,7 @@ def set_verbosity(verbosity: int):
 
 
 def render_file(filepath: str) -> str:
-    with open(str(pathlib.Path(filepath)), 'r') as f:
+    with open(str(pathlib.Path(filepath)), 'r', encoding='utf-8') as f:
         return f.read()
 
 
@@ -262,10 +262,10 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
 
         # Caching setup
         if not os.path.isfile(_TRANSLATION_CACHE_FILE):
-            with open(_TRANSLATION_CACHE_FILE, "w") as f:
+            with open(_TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
                 json.dump({}, f)
 
-        with open(_TRANSLATION_CACHE_FILE, "r") as f:
+        with open(_TRANSLATION_CACHE_FILE, 'r', encoding='utf-8') as f:
             globals()['_TRANSLATION_CACHE'] = json.load(f)
 
         # File Parsing
@@ -276,7 +276,7 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
         # Create a mapping to the correct line in each file
         print("Parsing files")
         for file in tqdm(files, total=len(files), unit="files"):
-            with open(file, "r") as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 translation_file = TranslationFile(file)
                 translation_block, translation_item, block = None, None, None
                 text_lines = f.readlines()
@@ -329,7 +329,7 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
 
                 # Write back to disk
                 print("Saving translations")
-                with open(file, "r") as f:
+                with open(file, 'r', encoding='utf-8') as f:
                     text_lines = f.readlines()
                     for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks"):
                         for item in block:
@@ -345,12 +345,12 @@ def main(translate, in_path, out_path, engine, max_token, temperature, verbosity
                                                                                    item.get_translated_content(),
                                                                                    item.suffix)
                 print("Persisting Cache")
-                with open(_TRANSLATION_CACHE_FILE, "w") as f:
+                with open(_TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
                     json.dump(_TRANSLATION_CACHE, f, indent=4)
                 common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
                 out_path_file = os.path.join(out_path, os.path.relpath(file, common_path))
                 os.makedirs(os.path.dirname(out_path_file), exist_ok=True)
-                with open(out_path_file, "w") as f:
+                with open(out_path_file, 'w', encoding='utf-8') as f:
                     f.writelines(text_lines)
                 print("")
     except Exception as e:
