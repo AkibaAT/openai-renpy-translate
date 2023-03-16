@@ -3,8 +3,7 @@
 Opentranslator is a simple command that can be used from the terminal to translate ren'py localization files.  
 It uses OpenAI API to perform all operations, you can choose which model to use by passing it as a parameter.
 
-The following project was born to study OpenAI and how it works.
-If you would contribute open a pull request or issue on GitHub.
+If you would like to contribute, open a pull request, or issue, on GitHub.
 
 ### ren'py Fork Maintained By
 
@@ -15,8 +14,20 @@ If you would contribute open a pull request or issue on GitHub.
 #### Required
 
 - Python >= 3.7
-- OpenAI Account
+- **PAID** OpenAI Account
 
+### User Mode
+
+1. Download the latest release for
+[Windows](https://github.com/Rejaku/openai-renpy-translate/releases/latest/download/openai-renpy-translate-windows-x86_64.exe)
+or [Linux](https://github.com/Rejaku/openai-renpy-translate/releases/latest/download/openai-renpy-translate-linux-x86_64)
+2. Run the program:  
+   1. Windows:  
+`OPENAI_API_KEY=${YOUR_OPENAI_API_KEY} ./openai-renpy-translate-windows-x86_64.exe --translate "${TARGET_LANGUAGE}" 
+--in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+   2. Linux:  
+`OPENAI_API_KEY=${YOUR_OPENAI_API_KEY} ./openai-renpy-translate-linux-x86_64 --translate "${TARGET_LANGUAGE}" 
+--in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
 
 ### Dev Mode
 
@@ -25,17 +36,15 @@ If you would contribute open a pull request or issue on GitHub.
 ```
 git clone -b chatgpt git@github.com:Rejaku/openai-chatgpt-opentranslator.git
 cd chatgpt-translate-app
-echo 'export OPENAI_API_KEY="${YOUR_OPENAI_API_KEY}"' > .env
-chmod +x scritps/*.sh
+export OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}
 ./scripts/setup.sh
 source .activate
 ```
 
 2. Usage
 
-```
-python opentranslator/app.py --translate German --in-path renpyProject/game/tl/German --out-path renpyProject/game/tl/German-AI
-```
+`python src/app.py --translate ${TARGET_LANGUAGE} --in-path renpyProject/game/tl/${TARGET_LANGUAGE} 
+--out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
 
 ### Contributors
 
