@@ -23,11 +23,13 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 or [Linux](https://github.com/Rejaku/openai-renpy-translate/releases/latest/download/openai-renpy-translate-linux-x86_64)
 2. Run the program:  
    1. Windows:  
-`OPENAI_API_KEY=${YOUR_OPENAI_API_KEY} ./openai-renpy-translate-windows-x86_64.exe --translate "${TARGET_LANGUAGE}" 
---in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+   `set OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}`  
+   `openai-renpy-translate-windows-x86_64.exe --translate "${TARGET_LANGUAGE}" 
+   --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
    2. Linux:  
-`OPENAI_API_KEY=${YOUR_OPENAI_API_KEY} ./openai-renpy-translate-linux-x86_64 --translate "${TARGET_LANGUAGE}" 
---in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+   `export OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}`  
+   `./openai-renpy-translate-linux-x86_64 --translate "${TARGET_LANGUAGE}" 
+   --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
 
 ### Dev Mode
 
