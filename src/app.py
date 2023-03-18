@@ -19,6 +19,7 @@ _TRANSLATION_CACHE = {}
 _TRANSLATION_CACHE_FILE = 'translation_cache.json'
 _TEMPERATURE = 0.7
 _MAX_TOKEN = 256
+_UNOFFICIAL_MODE = False
 
 # Link https://beta.openai.com/docs/models/gpt-3
 _DEFAULT_ENGINE = 'gpt-3.5-turbo'
@@ -229,8 +230,13 @@ class TranslationString:
             raise Exception(
                 f'The required tokens {request_token} are greater than the limit of {_TOKEN_LIMITS_PER_REQUEST[engine]}')
 
+        if _UNOFFICIAL_MODE:
+            api_base = "https://chatgpt-api.shn.hk/v1"
+        else:
+            api_base = None
         if engine == 'gpt-3.5-turbo':
             response = openai.ChatCompletion.create(
+                api_base=api_base,
                 model=engine,
                 messages=[{"role": "user", "content": text}],
                 temperature=_TEMPERATURE,
@@ -243,6 +249,7 @@ class TranslationString:
                     self.translation = choices[0]['message']['content'].lstrip().replace('"', '\\"')
         else:
             response = openai.Completion.create(
+                api_base=api_base,
                 model=engine,
                 prompt=text,
                 temperature=_TEMPERATURE,
@@ -277,15 +284,17 @@ class TranslationString:
 @click.option('--in-path', type=str, required=True, help='(required) File path containing the text')
 @click.option('--out-path', type=str, required=True, help='(required) The directory to output data to')
 @click.option('--engine', default=_DEFAULT_ENGINE, type=click.Choice(_AVAILABLE_ENGINES), help='GPT-3 engine')
+@click.option('--unofficial', default=False, type=bool, help='Use the unofficial GPT-3 API')
 @click.option('--temperature', default=_TEMPERATURE, help='Higher values means the model will take more risks. Values 0 to 1')
 @click.option('--max-token', default=_MAX_TOKEN, help='The maximum number of tokens to generate in the completion.')
 @click.option('-v', '--verbosity', default=3, count=True)
-def main(translate, in_path, out_path, engine, max_token, temperature, verbosity):
+def main(translate, in_path, out_path, engine, unofficial, max_token, temperature, verbosity):
     try:
         set_verbosity(verbosity)
 
         globals()['_MAX_TOKEN'] = max_token
         globals()['_TEMPERATURE'] = temperature
+        globals()['_UNOFFICIAL_MODE'] = unofficial
 
         # Caching setup
         if not os.path.isfile(_TRANSLATION_CACHE_FILE):
