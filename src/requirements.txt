@@ -1,7 +1,6 @@
-pyinstaller
-
 click>=8.*
 openai~=0.27.0
+tiktoken
 
 setuptools~=67.4.0
 tqdm~=4.64.1

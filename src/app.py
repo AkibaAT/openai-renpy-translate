@@ -10,6 +10,7 @@ from colorama import Fore, Style
 import json
 import click
 import openai
+import tiktoken
 openai.api_key = os.environ['OPENAI_API_KEY']
 
 _VERBOSITY = 1
@@ -19,33 +20,53 @@ _TRANSLATION_CACHE_FILE = 'translation_cache.json'
 _TEMPERATURE = 0.7
 _MAX_TOKEN = 256
 
-# Calculate token https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
-
 # Link https://beta.openai.com/docs/models/gpt-3
 _DEFAULT_ENGINE = 'gpt-3.5-turbo'
-_AVAILABLE_ENGINES = ['text-ada-001', 'text-babbage-001',
-                      'text-curie-001', 'text-davinci-003',
-                      'gpt-3.5-turbo']
+_AVAILABLE_ENGINES = [
+    'text-curie-001',
+    'text-babbage-001',
+    'text-ada-001',
+    'davinci',
+    'curie',
+    'babbage',
+    'ada',
+    'gpt-3.5-turbo',
+    'text-davinci-003',
+    'text-davinci-002',
+    'gpt-4',
+    'gpt-4-32k'
+]
 
-# Link https://openai.com/api/pricing
-# 750 words = 1000 tokens
-_WORDS = 750
-_TOKEN = 1000
+# Link https://openai.com/pricing#language-models
 _PRICING_PER_1K_TOKENS = {
-    'text-ada-001': 0.0004,
+    'text-curie-001': 0.002,
     'text-babbage-001': 0.0005,
-    'text-curie-001': 0.0020,
-    'text-davinci-003': 0.0200,
-    'gpt-3.5-turbo': 0.0020
+    'text-ada-001': 0.0004,
+    'davinci': 0.02,
+    'curie': 0.002,
+    'babbage': 0.0005,
+    'ada': 0.0004,
+    'gpt-3.5-turbo': 0.002,
+    'text-davinci-003': 0,
+    'text-davinci-002': 0,
+    'gpt-4': 0.06,
+    'gpt-4-32k': 0.12
 }
 
-# Link https://beta.openai.com/docs/models/gpt-3
+# Link https://platform.openai.com/docs/models/overview
 _TOKEN_LIMITS_PER_REQUEST = {
-    'text-ada-001': 2048,
-    'text-babbage-001': 2048,
-    'text-curie-001': 2048,
-    'text-davinci-003': 4000,
-    'gpt-3.5-turbo': 4000
+    'text-curie-001': 2049,
+    'text-babbage-001': 2049,
+    'text-ada-001': 2049,
+    'davinci': 2049,
+    'curie': 2049,
+    'babbage': 2049,
+    'ada': 2049,
+    'gpt-3.5-turbo': 4096,
+    'text-davinci-003': 4096,
+    'text-davinci-002': 4096,
+    'gpt-4': 8192,
+    'gpt-4-32k': 32768
 }
 
 
@@ -59,8 +80,14 @@ def render_file(filepath: str) -> str:
         return f.read()
 
 
+def calculate_tokens(engine: str, text: str) -> int:
+    encoding = tiktoken.encoding_for_model(engine)
+    num_tokens = len(encoding.encode(text))
+    return num_tokens
+
+
 def calculate_pricing(engine: str, tokens: int) -> int:
-    pricing = Decimal((tokens / _TOKEN) * _PRICING_PER_1K_TOKENS[engine])
+    pricing = Decimal((tokens / 1000) * _PRICING_PER_1K_TOKENS[engine])
     return round(pricing, 4)
 
 
@@ -192,7 +219,7 @@ class TranslationString:
         prefix = f'Translate to {self.to_language}, keep all markers, don\'t add new comments:'
         text = f'{prefix}:\n{self.content}'
 
-        request_token = round(_WORDS / len(text))
+        request_token = calculate_tokens(engine, text)
         request_pricing = calculate_pricing(engine, request_token)
         debug(f'# Request cost: ${request_pricing}')
         debug(
