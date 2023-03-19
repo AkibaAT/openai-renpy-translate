@@ -92,6 +92,12 @@ def calculate_pricing(engine: str, tokens: int) -> int:
     return round(pricing, 4)
 
 
+def persist_cache():
+    print("Persisting Cache")
+    with open(_TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(_TRANSLATION_CACHE, f, indent=4)
+
+
 def verbose(level: int):
     import functools
 
@@ -282,6 +288,7 @@ class TranslationString:
             debug(f'# Total tokens: {request_token + response_token}')
             debug(f'# Total cost: ${request_pricing + response_pricing}')
             _TRANSLATION_CACHE[self.content] = {to_language: self.translation}
+            persist_cache()
 
     def pull_from_cache(self, to_language):
         available_translations = _TRANSLATION_CACHE.get(self.content, None)
@@ -401,9 +408,7 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
                                 text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
                                                                                    item.get_translated_content(),
                                                                                    item.suffix)
-                print("Persisting Cache")
-                with open(_TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
-                    json.dump(_TRANSLATION_CACHE, f, indent=4)
+                persist_cache()
                 common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
                 out_path_file = os.path.join(out_path, os.path.relpath(file, common_path))
                 os.makedirs(os.path.dirname(out_path_file), exist_ok=True)
