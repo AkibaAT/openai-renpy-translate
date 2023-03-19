@@ -208,6 +208,9 @@ class TranslationString:
         self.engine = engine
         self.to_language = to_language
 
+        if self.translation:
+            return
+
         if not self.content.strip():
             self.translation = self.content
             return
@@ -342,6 +345,9 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
                         continue
 
                     if text_lines[i - 1].strip().startswith("old") and line.strip().startswith("new"):
+                        m = re.match(r'(\s*)(\w+)?\s*"(.*)"', line.strip())
+                        if m is not None:
+                            translation_item.translation_string.translation = m.group(3)
                         translation_item.target_line = i
                         translation_block.add_translation_item(translation_item)
                         continue
@@ -349,21 +355,24 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
                     if text_lines[i - 1].strip().startswith("#") \
                             and not text_lines[i - 1].strip().startswith("# nvl clear") \
                             and line.strip():
-                        m = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i - 1].strip()[2:])
-                        if m is None:
+                        source = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i - 1].strip()[2:])
+                        if source is None:
                             continue
-                        position = text_lines[i - 1].find(m.group(3))
-                        suffix = text_lines[i - 1][position + len(m.group(3)) + 1:]
+                        position = text_lines[i - 1].find(source.group(3))
+                        suffix = text_lines[i - 1][position + len(source.group(3)) + 1:]
                         if line.strip().startswith("nvl clear"):
                             translation_item = TranslationItem(source_line=i,
-                                                               original_content=m.group(3),
+                                                               original_content=source.group(3),
                                                                suffix=suffix,
                                                                target_line=i + 1)
                         else:
                             translation_item = TranslationItem(source_line=i,
-                                                               original_content=m.group(3),
+                                                               original_content=source.group(3),
                                                                suffix=suffix,
                                                                target_line=i)
+                        translation = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i].strip())
+                        if translation is not None:
+                            translation_item.translation_string.translation = translation.group(3)
                         translation_block.add_translation_item(translation_item)
                         continue
 
