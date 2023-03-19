@@ -268,11 +268,11 @@ class TranslationString:
                         if len(choices) > 0:
                             self.translation = choices[0]['text'].lstrip().replace('"', '\\"')
                             break
-            except TimeoutError:
+            except Exception:
                 if i < 2:
-                    debug('Request timed out, retrying...')
+                    debug('Request had error, retrying...')
                 else:
-                    debug('Request timed out, skipping!')
+                    debug('Request had error, skipping!')
                 continue
         if response is not None:
             response_token = response.get('usage', {}).get('completion_tokens', 0)
