@@ -234,39 +234,51 @@ class TranslationString:
             api_base = "https://chatgpt-api.shn.hk/v1"
         else:
             api_base = None
-        if engine == 'gpt-3.5-turbo':
-            response = openai.ChatCompletion.create(
-                api_base=api_base,
-                model=engine,
-                messages=[{"role": "user", "content": text}],
-                temperature=_TEMPERATURE,
-                max_tokens=_MAX_TOKEN,
-                frequency_penalty=0,
-                presence_penalty=0
-            )
-            if choices := response.get('choices', []):
-                if len(choices) > 0:
-                    self.translation = choices[0]['message']['content'].lstrip().replace('"', '\\"')
-        else:
-            response = openai.Completion.create(
-                api_base=api_base,
-                model=engine,
-                prompt=text,
-                temperature=_TEMPERATURE,
-                max_tokens=_MAX_TOKEN,
-                frequency_penalty=0,
-                presence_penalty=0
-            )
-            if choices := response.get('choices', []):
-                if len(choices) > 0:
-                    self.translation = choices[0]['text'].lstrip().replace('"', '\\"')
-        response_token = response.get('usage', {}).get('completion_tokens', 0)
-        response_pricing = calculate_pricing(engine, response_token)
-        debug(f'# Response cost: ${response_pricing}')
-        debug(f'# Response tokens: {response_token}')
-        debug(f'# Total tokens: {request_token + response_token}')
-        debug(f'# Total cost: ${request_pricing + response_pricing}')
-        _TRANSLATION_CACHE[self.content] = {to_language: self.translation}
+        response = None
+        for i in range(3):
+            try:
+                if engine == 'gpt-3.5-turbo':
+                    response = openai.ChatCompletion.create(
+                        api_base=api_base,
+                        model=engine,
+                        messages=[{"role": "user", "content": text}],
+                        temperature=_TEMPERATURE,
+                        max_tokens=_MAX_TOKEN,
+                        frequency_penalty=0,
+                        presence_penalty=0
+                    )
+                    if choices := response.get('choices', []):
+                        if len(choices) > 0:
+                            self.translation = choices[0]['message']['content'].lstrip().replace('"', '\\"')
+                            break
+                else:
+                    response = openai.Completion.create(
+                        api_base=api_base,
+                        model=engine,
+                        prompt=text,
+                        temperature=_TEMPERATURE,
+                        max_tokens=_MAX_TOKEN,
+                        frequency_penalty=0,
+                        presence_penalty=0
+                    )
+                    if choices := response.get('choices', []):
+                        if len(choices) > 0:
+                            self.translation = choices[0]['text'].lstrip().replace('"', '\\"')
+                            break
+            except TimeoutError:
+                if i < 2:
+                    debug('Request timed out, retrying...')
+                else:
+                    debug('Request timed out, skipping!')
+                continue
+        if response is not None:
+            response_token = response.get('usage', {}).get('completion_tokens', 0)
+            response_pricing = calculate_pricing(engine, response_token)
+            debug(f'# Response cost: ${response_pricing}')
+            debug(f'# Response tokens: {response_token}')
+            debug(f'# Total tokens: {request_token + response_token}')
+            debug(f'# Total cost: ${request_pricing + response_pricing}')
+            _TRANSLATION_CACHE[self.content] = {to_language: self.translation}
 
     def pull_from_cache(self, to_language):
         available_translations = _TRANSLATION_CACHE.get(self.content, None)
