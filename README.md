@@ -14,7 +14,7 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 #### Required
 
 - Python >= 3.7
-- **PAID** OpenAI Account
+- **PAID** OpenAI Account (unless you use --unofficial 1)
 
 ### User Mode
 
