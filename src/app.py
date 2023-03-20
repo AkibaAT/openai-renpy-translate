@@ -248,6 +248,7 @@ class TranslationString:
             try:
                 if engine == 'gpt-3.5-turbo':
                     response = openai.ChatCompletion.create(
+                        request_timeout=10,
                         api_base=api_base,
                         model=engine,
                         messages=[{"role": "user", "content": text}],
@@ -262,6 +263,7 @@ class TranslationString:
                             break
                 else:
                     response = openai.Completion.create(
+                        request_timeout=10,
                         api_base=api_base,
                         model=engine,
                         prompt=text,
