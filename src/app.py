@@ -146,7 +146,7 @@ class TranslationItem:
         self.translation_string.translate(engine, to_language)
 
     def get_translated_content(self):
-        return self.translation_string.translation
+        return repr(self.translation_string.translation)
 
     @property
     def original_content(self):
@@ -276,7 +276,7 @@ class TranslationString:
                         if len(choices) > 0:
                             self.translation = choices[0]['text'].lstrip().replace('"', '\\"')
                             break
-            except Exception:
+            except openai.error.Timeout:
                 if i < 2:
                     debug('Request had error, retrying...')
                 else:
