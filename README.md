@@ -1,7 +1,8 @@
-# Opentranslator - OpenAI | ChatGPT | Translate ren'py with python
+# ren'py translate - OpenAI | ChatGPT | Translate ren'py with Python
 
-Opentranslator is a simple command that can be used from the terminal to translate ren'py localization files.  
-It uses OpenAI API to perform all operations, you can choose which model to use by passing it as a parameter.
+OpenAI ren'py translate is a simple command that can be used from the terminal to translate ren'py localization files.  
+It uses OpenAI API to perform all operations. You can choose which model to use by passing it as a parameter, with
+the current default being `gpt-3.5-turbo`.
 
 If you would like to contribute, open a pull request, or issue, on GitHub.
 
@@ -27,30 +28,30 @@ or [Linux](https://github.com/Rejaku/openai-renpy-translate/releases/latest/down
    or [accessToken](https://chat.openai.com/api/auth/session) (only for use with --unofficial 1 switch)
 3. Run the program:  
    1. Windows:  
-   `set OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}`  
-   `openai-renpy-translate-windows-x86_64.exe --translate "${TARGET_LANGUAGE}" 
+   `openai-renpy-translate-windows-x86_64.exe --api-key ${OPENAI_API_KEY} --translate "${TARGET_LANGUAGE}" 
    --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
    2. Linux:  
-   `export OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}`  
-   `./openai-renpy-translate-linux-x86_64 --translate "${TARGET_LANGUAGE}" 
+   `./openai-renpy-translate-linux-x86_64 --api-key ${OPENAI_API_KEY} --translate "${TARGET_LANGUAGE}" 
    --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+
+Note: To use the unofficial free ChatGPT API, you must pass the `--access-token ${OPENAI_ACCESS_TOKEN}` instead of 
+`--api-key ${OPENAI_API_KEY}`.
 
 ### Dev Mode
 
 1. Setup env
 
 ```
-git clone -b chatgpt git@github.com:Rejaku/openai-chatgpt-opentranslator.git
+git clone -b chatgpt https://github.com/Rejaku/openai-renpy-translate.git
 cd chatgpt-translate-app
-export OPENAI_API_KEY=${YOUR_OPENAI_API_KEY}
 ./scripts/setup.sh
 source .activate
 ```
 
 2. Usage
 
-`python src/app.py --translate ${TARGET_LANGUAGE} --in-path renpyProject/game/tl/${TARGET_LANGUAGE} 
---out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+`python src/app.py --api-key ${OPENAI_API_KEY} --translate ${TARGET_LANGUAGE} 
+--in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
 
 ### Contributors
 

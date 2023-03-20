@@ -11,7 +11,6 @@ import json
 import click
 import openai
 import tiktoken
-openai.api_key = os.environ['OPENAI_API_KEY']
 
 _VERBOSITY = 1
 
@@ -93,7 +92,6 @@ def calculate_pricing(engine: str, tokens: int) -> int:
 
 
 def persist_cache():
-    print("Persisting Cache")
     with open(_TRANSLATION_CACHE_FILE, 'w', encoding='utf-8') as f:
         json.dump(_TRANSLATION_CACHE, f, indent=4)
 
@@ -146,7 +144,7 @@ class TranslationItem:
         self.translation_string.translate(engine, to_language)
 
     def get_translated_content(self):
-        return repr(self.translation_string.translation)
+        return self.translation_string.translation.replace("\n", "\\n").strip('"')
 
     @property
     def original_content(self):
@@ -278,9 +276,9 @@ class TranslationString:
                             break
             except openai.error.Timeout:
                 if i < 2:
-                    debug('Request had error, retrying...')
+                    echo('Request had error, retrying...')
                 else:
-                    debug('Request had error, skipping!')
+                    echo('Request had error, skipping!')
                 continue
         if response is not None:
             response_token = response.get('usage', {}).get('completion_tokens', 0)
@@ -304,21 +302,30 @@ class TranslationString:
 
 
 @click.command()
+@click.option('--api-key', type=str, required=False)
+@click.option('--access-token', type=str, required=False)
 @click.option('--translate', type=str, required=True)
 @click.option('--in-path', type=str, required=True, help='(required) File path containing the text')
 @click.option('--out-path', type=str, required=True, help='(required) The directory to output data to')
 @click.option('--engine', default=_DEFAULT_ENGINE, type=click.Choice(_AVAILABLE_ENGINES), help='GPT-3 engine')
-@click.option('--unofficial', default=False, type=bool, help='Use the unofficial GPT-3 API')
 @click.option('--temperature', default=_TEMPERATURE, help='Higher values means the model will take more risks. Values 0 to 1')
 @click.option('--max-token', default=_MAX_TOKEN, help='The maximum number of tokens to generate in the completion.')
-@click.option('-v', '--verbosity', default=3, count=True)
-def main(translate, in_path, out_path, engine, unofficial, max_token, temperature, verbosity):
+@click.option('-v', '--verbosity', default=1, count=True)
+def main(api_key, access_token, translate, in_path, out_path, engine, max_token, temperature, verbosity):
     try:
         set_verbosity(verbosity)
 
+        if api_key is None and access_token is None:
+            raise Exception('Please provide an API key or access token')
+
+        if api_key:
+            openai.api_key = api_key
+        else:
+            globals()['_UNOFFICIAL_MODE'] = True
+            openai.api_key = access_token
+
         globals()['_MAX_TOKEN'] = max_token
         globals()['_TEMPERATURE'] = temperature
-        globals()['_UNOFFICIAL_MODE'] = unofficial
 
         # Caching setup
         if not os.path.isfile(_TRANSLATION_CACHE_FILE):
@@ -335,7 +342,7 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
         # Find all translation blocks in all files
         # Create a mapping to the correct line in each file
         print("Parsing files")
-        for file in tqdm(files, total=len(files), unit="files"):
+        for file in tqdm(files, total=len(files), unit="files", position=0, leave=False):
             with open(file, 'r', encoding='utf-8') as f:
                 translation_file = TranslationFile(file)
                 translation_block, translation_item, block = None, None, None
@@ -364,24 +371,24 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
                     if text_lines[i - 1].strip().startswith("#") \
                             and not text_lines[i - 1].strip().startswith("# nvl clear") \
                             and line.strip():
-                        source = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i - 1].strip()[2:])
+                        source = re.match(r'.*"(.*)"', text_lines[i - 1].strip()[2:])
                         if source is None:
                             continue
-                        position = text_lines[i - 1].find(source.group(3))
-                        suffix = text_lines[i - 1][position + len(source.group(3)) + 1:]
+                        position = text_lines[i - 1].find(source.group(1))
+                        suffix = text_lines[i - 1][position + len(source.group(1)) + 1:]
                         if line.strip().startswith("nvl clear"):
                             translation_item = TranslationItem(source_line=i,
-                                                               original_content=source.group(3),
+                                                               original_content=source.group(1),
                                                                suffix=suffix,
                                                                target_line=i + 1)
                         else:
                             translation_item = TranslationItem(source_line=i,
-                                                               original_content=source.group(3),
+                                                               original_content=source.group(1),
                                                                suffix=suffix,
                                                                target_line=i)
-                        translation = re.match(r'(\s*)(\w+)?\s*"(.*)"', text_lines[i].strip())
+                        translation = re.match(r'.*"(.*)"', text_lines[i].strip())
                         if translation is not None:
-                            translation_item.translation_string.translation = translation.group(3)
+                            translation_item.translation_string.translation = translation.group(1)
                         translation_block.add_translation_item(translation_item)
                         continue
 
@@ -389,34 +396,29 @@ def main(translate, in_path, out_path, engine, unofficial, max_token, temperatur
                     translation_file.add_translation_block(translation_block)
                 file_map[file] = translation_file
 
-                print('Starting translation')
                 tqdm.write("Translating '{}' {}\u2713 OK{}".format(translation_file, Fore.GREEN, Style.RESET_ALL))
                 translation_file.translate(engine, translate)
 
                 # Write back to disk
-                print("Saving translations")
                 with open(file, 'r', encoding='utf-8') as f:
                     text_lines = f.readlines()
-                    for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks"):
-                        for item in block:
-                            m = re.match(r"(\s*)(\w+)?\s*("")", text_lines[item.target_line])
+                    for block in tqdm(translation_file, total=len(translation_file.translation_blocks), unit="blocks",
+                                      position=1, leave=False):
+                        for item in tqdm(block, total=len(block.translation_items), unit="items",
+                                         position=2, leave=False):
+                            m = re.match(r'(.*)(".*")', text_lines[item.target_line])
                             if m is None:
                                 continue
-                            if m.group(2):
-                                text_lines[item.target_line] = '{}{} "{}"{}\n'.format(m.group(1), m.group(2),
-                                                                                      item.get_translated_content(),
-                                                                                      item.suffix)
-                            else:
-                                text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
-                                                                                   item.get_translated_content(),
-                                                                                   item.suffix)
+                            text_lines[item.target_line] = '{}"{}"{}\n'.format(m.group(1),
+                                                                               item.get_translated_content(),
+                                                                               item.suffix.rstrip())
                 persist_cache()
                 common_path = os.path.commonpath([os.path.abspath(file), os.path.abspath(in_path)])
                 out_path_file = os.path.join(out_path, os.path.relpath(file, common_path))
                 os.makedirs(os.path.dirname(out_path_file), exist_ok=True)
                 with open(out_path_file, 'w', encoding='utf-8') as f:
                     f.writelines(text_lines)
-                print("")
+        print('Process complete')
     except Exception as e:
         echo(f'[ERR] {str(e)}')
         sys.exit(1)
