@@ -1,16 +1,18 @@
+import json
 import os
 import pathlib
-import sys
 import re
-from glob import glob
+import sys
 from decimal import Decimal
-from tqdm import tqdm
-from colorama import Fore, Style
+from glob import glob
 
-import json
 import click
 import openai
 import tiktoken
+from colorama import Fore, Style
+from tqdm import tqdm
+from openai.error import RateLimitError
+import backoff
 
 _VERBOSITY = 1
 
@@ -241,52 +243,17 @@ class TranslationString:
             api_base = "https://chatgpt-api.shn.hk/v1"
         else:
             api_base = None
-        response = None
         for i in range(3):
             try:
-                if engine == 'gpt-3.5-turbo':
-                    response = openai.ChatCompletion.create(
-                        request_timeout=10,
-                        api_base=api_base,
-                        model=engine,
-                        messages=[{"role": "user", "content": text}],
-                        temperature=_TEMPERATURE,
-                        max_tokens=_MAX_TOKEN,
-                        frequency_penalty=0,
-                        presence_penalty=0
-                    )
-                    if choices := response.get('choices', []):
-                        if len(choices) > 0:
-                            self.translation = choices[0]['message']['content'].lstrip().replace('"', '\\"')
-                            break
-                else:
-                    response = openai.Completion.create(
-                        request_timeout=10,
-                        api_base=api_base,
-                        model=engine,
-                        prompt=text,
-                        temperature=_TEMPERATURE,
-                        max_tokens=_MAX_TOKEN,
-                        frequency_penalty=0,
-                        presence_penalty=0
-                    )
-                    if choices := response.get('choices', []):
-                        if len(choices) > 0:
-                            self.translation = choices[0]['text'].lstrip().replace('"', '\\"')
-                            break
+                self.translation = self.api_request(engine, api_base, text)
+                break
             except openai.error.Timeout:
                 if i < 2:
                     echo('Request had error, retrying...')
                 else:
                     echo('Request had error, skipping!')
                 continue
-        if response is not None:
-            response_token = response.get('usage', {}).get('completion_tokens', 0)
-            response_pricing = calculate_pricing(engine, response_token)
-            debug(f'# Response cost: ${response_pricing}')
-            debug(f'# Response tokens: {response_token}')
-            debug(f'# Total tokens: {request_token + response_token}')
-            debug(f'# Total cost: ${request_pricing + response_pricing}')
+        if self.translation is not None:
             _TRANSLATION_CACHE[self.content] = {to_language: self.translation}
             persist_cache()
 
@@ -296,6 +263,37 @@ class TranslationString:
             cached_translation = available_translations.get(to_language, None)
             if cached_translation:
                 return cached_translation
+
+    @backoff.on_exception(backoff.expo, RateLimitError)
+    def api_request(self, engine, api_base, text):
+        if engine == 'gpt-3.5-turbo':
+            response = openai.ChatCompletion.create(
+                request_timeout=10,
+                api_base=api_base,
+                model=engine,
+                messages=[{"role": "user", "content": text}],
+                temperature=_TEMPERATURE,
+                max_tokens=_MAX_TOKEN,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            if choices := response.get('choices', []):
+                if len(choices) > 0:
+                    return choices[0]['message']['content'].lstrip().replace('"', '\\"')
+        else:
+            response = openai.Completion.create(
+                request_timeout=10,
+                api_base=api_base,
+                model=engine,
+                prompt=text,
+                temperature=_TEMPERATURE,
+                max_tokens=_MAX_TOKEN,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            if choices := response.get('choices', []):
+                if len(choices) > 0:
+                    return choices[0]['text'].lstrip().replace('"', '\\"')
 
     def __repr__(self):
         return 'TranslationString(content="{}", translation="{}")'.format(self.content, self.translation)

@@ -65,6 +65,7 @@ jobs:
           mv artifacts/openai-renpy-translate-windows-x86_64/app.exe artifacts/openai-renpy-translate-windows-x86_64/openai-renpy-translate-windows-x86_64.exe
           mv artifacts/openai-renpy-translate-linux-x86_64/app artifacts/openai-renpy-translate-linux-x86_64/openai-renpy-translate-linux-x86_64
           ls -lah artifacts
+          sleep 30
           hub release edit $(find artifacts -type f -printf "-a %p ") -m "" "$tag_name"
       - name: Set release status
         uses: softprops/action-gh-release@v1
