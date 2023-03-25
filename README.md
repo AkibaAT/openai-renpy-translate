@@ -15,7 +15,7 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 #### Required
 
 - Python >= 3.7
-- **PAID** OpenAI Account for official general API use with [API key](https://platform.openai.com/account/api-keys)  
+- **PAID** (or trial) OpenAI Account for official general API use with [API key](https://platform.openai.com/account/api-keys)  
   OR  
   **FREE** OpenAI Account for unofficial ChatGPT API use with [accessToken](https://chat.openai.com/api/auth/session)
 
@@ -43,7 +43,7 @@ Note: To use the unofficial free ChatGPT API, you must pass the `--access-token 
 
 ```
 git clone -b chatgpt https://github.com/Rejaku/openai-renpy-translate.git
-cd chatgpt-translate-app
+cd openai-renpy-translate
 ./scripts/setup.sh
 source .activate
 ```
@@ -51,7 +51,7 @@ source .activate
 2. Usage
 
 `python src/app.py --api-key ${OPENAI_API_KEY} --translate ${TARGET_LANGUAGE} 
---in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+--in-path "renpyProject/game/tl/${TARGET_LANGUAGE}" --out-path "renpyProject/game/tl/${TARGET_LANGUAGE}-AI"`
 
 ### Contributors
 
