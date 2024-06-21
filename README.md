@@ -1,12 +1,11 @@
-# ren'py translate - OpenAI | ChatGPT | Translate ren'py with Python
+# Ren'Py Translate - OpenAI | ChatGPT | Translate Ren'Py with Python
 
-OpenAI ren'py translate is a simple command that can be used from the terminal to translate ren'py localization files.  
-It uses OpenAI API to perform all operations. You can choose which model to use by passing it as a parameter, with
-the current default being `gpt-3.5-turbo`.
+OpenAI Ren'Py Translate is a simple GUI application that can be used to translate Ren'Py localization files.  
+It uses OpenAI API to perform all operations. You can choose between `gpt-3.5-turbo` and `gpt-4o`.
 
-If you would like to contribute, open a pull request, or issue, on GitHub.
+If you would like to contribute, open a pull request or issue on GitHub.
 
-### ren'py Fork Maintained By
+### Ren'Py Fork Maintained By
 
 - **[Akiba](https://github.com/AkibaAT)**
 
@@ -42,8 +41,7 @@ source .activate
 
 2. Usage
 
-`python src/app.py --api-key ${OPENAI_API_KEY} --translate ${TARGET_LANGUAGE} 
---in-path "renpyProject/game/tl/${TARGET_LANGUAGE}" --out-path "renpyProject/game/tl/${TARGET_LANGUAGE}-AI"`
+`python src/app.py`
 
 ### Contributors
 
