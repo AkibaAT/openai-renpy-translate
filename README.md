@@ -16,26 +16,18 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 
 - Python >= 3.7
 - **PAID** (or trial) OpenAI Account for official general API use with [API key](https://platform.openai.com/account/api-keys)  
-  OR  
-  **FREE** OpenAI Account for unofficial ChatGPT API use with [accessToken](https://chat.openai.com/api/auth/session)
 
 ### User Mode
 
 1. Download the latest release for
 [Windows](https://github.com/AkibaAT/openai-renpy-translate/releases/latest/download/openai-renpy-translate-windows-x86_64.exe)
 or [Linux](https://github.com/AkibaAT/openai-renpy-translate/releases/latest/download/openai-renpy-translate-linux-x86_64)
-2. Get your OpenAI [API key](https://platform.openai.com/account/api-keys) (requires no switch)
-   or [accessToken](https://chat.openai.com/api/auth/session) (only for use with --unofficial 1 switch)
+2. Get your OpenAI [API key](https://platform.openai.com/account/api-keys)
 3. Run the program:  
    1. Windows:  
-   `openai-renpy-translate-windows-x86_64.exe --api-key ${OPENAI_API_KEY} --translate "${TARGET_LANGUAGE}" 
-   --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
+   `openai-renpy-translate-windows-x86_64.exe`
    2. Linux:  
-   `./openai-renpy-translate-linux-x86_64 --api-key ${OPENAI_API_KEY} --translate "${TARGET_LANGUAGE}" 
-   --in-path renpyProject/game/tl/${TARGET_LANGUAGE} --out-path renpyProject/game/tl/${TARGET_LANGUAGE}-AI`
-
-Note: To use the unofficial free ChatGPT API, you must pass the `--access-token ${OPENAI_ACCESS_TOKEN}` instead of 
-`--api-key ${OPENAI_API_KEY}`.
+   `./openai-renpy-translate-linux-x86_64`
 
 ### Dev Mode
 
