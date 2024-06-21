@@ -8,7 +8,7 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 
 ### ren'py Fork Maintained By
 
-- **[Rejaku](https://github.com/Rejaku)**
+- **[Akiba](https://github.com/AkibaAT)**
 
 ### Usage
 
@@ -22,8 +22,8 @@ If you would like to contribute, open a pull request, or issue, on GitHub.
 ### User Mode
 
 1. Download the latest release for
-[Windows](https://github.com/Rejaku/openai-renpy-translate/releases/latest/download/openai-renpy-translate-windows-x86_64.exe)
-or [Linux](https://github.com/Rejaku/openai-renpy-translate/releases/latest/download/openai-renpy-translate-linux-x86_64)
+[Windows](https://github.com/AkibaAT/openai-renpy-translate/releases/latest/download/openai-renpy-translate-windows-x86_64.exe)
+or [Linux](https://github.com/AkibaAT/openai-renpy-translate/releases/latest/download/openai-renpy-translate-linux-x86_64)
 2. Get your OpenAI [API key](https://platform.openai.com/account/api-keys) (requires no switch)
    or [accessToken](https://chat.openai.com/api/auth/session) (only for use with --unofficial 1 switch)
 3. Run the program:  
@@ -42,7 +42,7 @@ Note: To use the unofficial free ChatGPT API, you must pass the `--access-token 
 1. Setup env
 
 ```
-git clone -b chatgpt https://github.com/Rejaku/openai-renpy-translate.git
+git clone -b chatgpt https://github.com/AkibaAT/openai-renpy-translate.git
 cd openai-renpy-translate
 ./scripts/setup.sh
 source .activate
@@ -55,7 +55,7 @@ source .activate
 
 ### Contributors
 
-<a href="https://github.com/Rejaku/openai-renpy-translate/graphs/contributors"> <img src="https://contrib.rocks/image?repo=Rejaku/openai-renpy-translate" /> </a>
+<a href="https://github.com/AkibaAT/openai-renpy-translate/graphs/contributors"> <img src="https://contrib.rocks/image?repo=AkibaAT/openai-renpy-translate" /> </a>
 
 ### License
 
