@@ -25,7 +25,6 @@ _TRANSLATION_CACHE = {}
 _TRANSLATION_CACHE_FILE = 'translation_cache.json'
 _TEMPERATURE = 0.7
 
-# Link https://beta.openai.com/docs/models/gpt-3
 _DEFAULT_ENGINE = 'gpt-4o-mini'
 _AVAILABLE_ENGINES = [
     'gpt-4o-mini',
