@@ -307,7 +307,7 @@ def parse_file(file: str) -> TranslationFile:
                 continue
 
             # Check for the start of a new translation block
-            if re.match(r"translate ([A-z0-9_]+) ([A-z0-9_]+)", line):
+            if re.match(r"translate ([a-zA-Z0-9_]+) ([a-zA-Z0-9_]+)", line):
                 if translation_block:
                     translation_file.add_translation_block(translation_block)
                 translation_block = TranslationBlock(source_file=file, block_line=i)
