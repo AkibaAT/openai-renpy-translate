@@ -26,21 +26,21 @@ _TRANSLATION_CACHE_FILE = 'translation_cache.json'
 _TEMPERATURE = 0.7
 
 # Link https://beta.openai.com/docs/models/gpt-3
-_DEFAULT_ENGINE = 'gpt-3.5-turbo'
+_DEFAULT_ENGINE = 'gpt-4o-mini'
 _AVAILABLE_ENGINES = [
-    'gpt-3.5-turbo',
+    'gpt-4o-mini',
     'gpt-4o'
 ]
 
 # Link https://openai.com/pricing#language-models
 _PRICING_PER_1K_TOKENS = {
-    'gpt-3.5-turbo': 0.001,
+    'gpt-4o-mini': 0.0001125,
     'gpt-4o': 0.01
 }
 
 # Link https://platform.openai.com/docs/models/overview
 _TOKEN_LIMITS_PER_REQUEST = {
-    'gpt-3.5-turbo': 16385,
+    'gpt-4o-mini': 128000,
     'gpt-4o': 128000
 }
 
