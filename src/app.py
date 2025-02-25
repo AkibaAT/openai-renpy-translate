@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt5.QtCore import QThread, pyqtSignal, QSettings
 
 import click
-import openai
 import tiktoken
 from openai import OpenAI, RateLimitError, APIError
 import backoff
@@ -418,7 +417,10 @@ def translate_batch(client: OpenAI, batch: List[TranslationString], engine: str,
         for item in batch:
             if item.needs_translation:
                 item.translation = translations[translation_index].strip()
-                _TRANSLATION_CACHE[item.content] = {to_language: item.translation}
+                if item.content in _TRANSLATION_CACHE:
+                    _TRANSLATION_CACHE[item.content][to_language] = item.translation
+                else:
+                    _TRANSLATION_CACHE[item.content] = {to_language: item.translation}
                 translation_index += 1
             else:
                 item.translation = item.content
