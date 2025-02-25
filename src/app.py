@@ -14,6 +14,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QSettings
 import click
 import openai
 import tiktoken
+from openai import OpenAI, RateLimitError, APIError
 import backoff
 
 _BATCH_SIZE = 10
@@ -241,11 +242,11 @@ class TranslationString:
         return f'TranslationString(content="{self.content}", translation="{self.translation}", needs_translation={self.needs_translation})'
 
 
-def batch_translate(strings: List[TranslationString], engine: str, to_language: str, api_base: str = None,
-                    progress_callback=None):
+def batch_translate(client: OpenAI, strings: List[TranslationString], engine: str, to_language: str,
+                    api_base: str = None, progress_callback=None):
     for i in range(0, len(strings), _BATCH_SIZE):
         batch = strings[i:i + _BATCH_SIZE]
-        translate_batch(batch, engine, to_language, api_base)
+        translate_batch(client,batch, engine, to_language, api_base)
         if progress_callback:
             progress_callback(min(i + _BATCH_SIZE, len(strings)))
 
@@ -381,27 +382,36 @@ def parse_file(file: str) -> TranslationFile:
     return translation_file
 
 
-@backoff.on_exception(backoff.expo, (openai.RateLimitError, openai.APIError), max_tries=5)
-def translate_batch(batch: List[TranslationString], engine: str, to_language: str, api_base: str = None):
+@backoff.on_exception(backoff.expo, (RateLimitError, APIError), max_tries=5)
+def translate_batch(client: OpenAI, batch: List[TranslationString], engine: str, to_language: str, api_base: str = None):
     prefix = f'Translate the following text blocks to {to_language} like a native speaker. Keep all markers (especially square and curly brackets) and do not add new comments. Separate each translated block with "---". Here are the text blocks:'
     content = "\n".join([f"[{i + 1}] {item.content}" for i, item in enumerate(batch) if item.needs_translation])
 
     full_prompt = f"{prefix}\n\n{content}"
 
     try:
-        response = openai.ChatCompletion.create(
-            request_timeout=30,
-            api_base=api_base,
-            model=engine,
-            messages=[
-                {"role": "system", "content": "You are a translator."},
-                {"role": "user", "content": full_prompt}
-            ],
-            temperature=_TEMPERATURE,
-            frequency_penalty=0,
-            presence_penalty=0
-        )
-        translated_text = response.choices[0]['message']['content']
+        if engine.startswith('o1') or engine.startswith('o3'):
+            response = client.chat.completions.create(
+                model=engine,
+                messages=[
+                    {"role": "user", "content": full_prompt}
+                ],
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+        else:
+            response = client.chat.completions.create(
+                model=engine,
+                messages=[
+                    {"role": "system",
+                     "content": "You are a translator and a native speaker of the language you are translating to."},
+                    {"role": "user", "content": full_prompt}
+                ],
+                temperature=_TEMPERATURE,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+        translated_text = response.choices[0].message.content
         translations = parse_translations(translated_text)
 
         translation_index = 0
@@ -420,6 +430,7 @@ def translate_batch(batch: List[TranslationString], engine: str, to_language: st
 
 
 class TranslationWorker(QThread):
+    client = None
     progress = pyqtSignal(int)
     finished = pyqtSignal()
     error = pyqtSignal(str)
@@ -436,7 +447,7 @@ class TranslationWorker(QThread):
 
     def run(self):
         try:
-            openai.api_key = self.api_key
+            self.client = OpenAI(api_key=self.api_key)
 
             self.log.emit("Searching for files...")
             files = glob(os.path.join(self.in_path, "**", "*.rpy"), recursive=True)
@@ -457,7 +468,7 @@ class TranslationWorker(QThread):
 
                 batch = strings_to_translate[i:i + 10]
                 try:
-                    batch_translate(batch, self.engine, self.translate_to)
+                    batch_translate(self.client, batch, self.engine, self.translate_to)
                 except Exception as e:
                     self.log.emit(f"Error in batch translation: {str(e)}")
                     continue
@@ -501,6 +512,7 @@ class TranslationWorker(QThread):
 
 
 class EstimationWorker(QThread):
+    client = None
     finished = pyqtSignal(int, float)
     error = pyqtSignal(str)
     progress = pyqtSignal(str)
@@ -516,7 +528,7 @@ class EstimationWorker(QThread):
     def run(self):
         try:
             self.progress.emit("Setting up API key...")
-            openai.api_key = self.api_key
+            self.client = OpenAI(api_key=self.api_key)
 
             self.progress.emit("Searching for files...")
             files = glob(os.path.join(self.in_path, "**", "*.rpy"), recursive=True)
