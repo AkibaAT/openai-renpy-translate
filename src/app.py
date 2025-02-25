@@ -14,7 +14,6 @@ from PyQt5.QtCore import QThread, pyqtSignal, QSettings
 import click
 import openai
 import tiktoken
-from openai.error import RateLimitError, APIError
 import backoff
 
 _BATCH_SIZE = 10
@@ -25,20 +24,32 @@ _TRANSLATION_CACHE = {}
 _TRANSLATION_CACHE_FILE = 'translation_cache.json'
 _TEMPERATURE = 0.7
 
-_DEFAULT_ENGINE = 'gpt-4o-mini'
+# Updated engines to include the current models.
+_DEFAULT_ENGINE = 'o3-mini'
 _AVAILABLE_ENGINES = [
+    'o3-mini',
+    'o1-mini',
+    'o1',
     'gpt-4o-mini',
     'gpt-4o'
 ]
 
-# Link https://openai.com/pricing#language-models
+# Link https://platform.openai.com/docs/pricing
 _PRICING_PER_1K_TOKENS = {
+    'o3-mini': 0.000825,
+    'o1-mini': 0.000825,
+    'o1': 0.01125,
     'gpt-4o-mini': 0.0001125,
     'gpt-4o': 0.01
 }
 
-# Link https://platform.openai.com/docs/models/overview
+# Token limits per request (set in tokens):
+# For o3-mini and o1, the context window is 200,000 tokens.
+# The legacy gpt-4o-mini and gpt-4o remain at 128,000 tokens.
 _TOKEN_LIMITS_PER_REQUEST = {
+    'o3-mini': 200000,
+    'o1-mini': 200000,
+    'o1': 200000,
     'gpt-4o-mini': 128000,
     'gpt-4o': 128000
 }
@@ -370,9 +381,9 @@ def parse_file(file: str) -> TranslationFile:
     return translation_file
 
 
-@backoff.on_exception(backoff.expo, (RateLimitError, APIError), max_tries=5)
+@backoff.on_exception(backoff.expo, (openai.RateLimitError, openai.APIError), max_tries=5)
 def translate_batch(batch: List[TranslationString], engine: str, to_language: str, api_base: str = None):
-    prefix = f'Translate the following text blocks to {to_language}. Keep all markers (especially square and curly brackets) and do not add new comments. Separate each translated block with "---". Here are the text blocks:'
+    prefix = f'Translate the following text blocks to {to_language} like a native speaker. Keep all markers (especially square and curly brackets) and do not add new comments. Separate each translated block with "---". Here are the text blocks:'
     content = "\n".join([f"[{i + 1}] {item.content}" for i, item in enumerate(batch) if item.needs_translation])
 
     full_prompt = f"{prefix}\n\n{content}"
@@ -570,7 +581,7 @@ class EstimationWorker(QThread):
 
         for i in range(0, len(uncached_strings), _BATCH_SIZE):
             batch = uncached_strings[i:i + _BATCH_SIZE]
-            prefix = f'Translate the following text blocks to {self.translate_to}. Keep all markers and do not add new comments. Separate each translated block with "---". Here are the text blocks:'
+            prefix = f'Translate the following text blocks to {self.translate_to} like a native speaker. Keep all markers and do not add new comments. Separate each translated block with "---". Here are the text blocks:'
             content = "\n".join([f"[{j + 1}] {item.content}" for j, item in enumerate(batch)])
             full_prompt = f"{prefix}\n\n{content}"
 

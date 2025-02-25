@@ -1,7 +1,8 @@
 # Ren'Py Translate - OpenAI | ChatGPT | Translate Ren'Py with Python
 
 OpenAI Ren'Py Translate is a simple GUI application that can be used to translate Ren'Py localization files.  
-It uses OpenAI API to perform all operations. You can choose between `gpt-4o-mini` and `gpt-4o`.
+It uses OpenAI API to perform all operations. You can choose between `o3-mini`, `o1-mini`, `o1`, `gpt-4o-mini` and 
+`gpt-4o`.
 
 If you would like to contribute, open a pull request or issue on GitHub.
 
